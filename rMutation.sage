@@ -21,19 +21,23 @@ def rCancel(rSeq):
 '''
 This function takes in a matrix and outputs its image under matrix mutation
 Indexing of the matrix begins at 1 not 0, as we are accustomed to
-Input: M (matrix), w (mutation sequence)
+Input: M (matrix), w (mutation sequence len(w) >= 0)
 Output: mut (mutated Matrix)
 '''
 def mMutation(M, w):
+    length = len(w)
     r = M.nrows()
     c = M.ncols()
-    for i in w:
-        if i < 1 or i > r or i > c: # Checks to see if we are mutating at non-vertices
-            print("Invalid mutation at vertex: ", i)
-            return M
-    mut = matrix(r,c,0) # Builds a 0 matrix because letting mut = M runs into problems
-    k = w[0]
-    if len(w) == 1:
+    mut = copy(M) # Builds a a copy of the original matrix
+    if length == 0: # In case no mutation happens
+        return mut
+    else:
+        for i in w:
+            if i < 1 or i > r or i > c: # Checks to see if we are mutating at non-vertices
+                print("Invalid mutation at vertex: ", i)
+                return mut
+    if length == 1: # Only one mutation happens
+         k = w[0]
          for i in range(r):
              for j in range(c): # Standard matrix mutation here
                  if i == k-1 or j == k-1: # Has the -1's here to account for sage indexing at 0
@@ -42,16 +46,43 @@ def mMutation(M, w):
                      mut[i,j] = M[i,j] + M[i,k-1]*M[k-1,j]*(M[i,k-1]/abs(M[i,k-1])) # Has the -1's here to account for sage indexing at 0
                  else:
                      mut[i,j] = M[i,j]
-    else:
-        mut = mMutation(mMutation(M,w[0:len(w)-1]), [w[len(w)-1]]) # Recursively "goes up" the mutation sequence
+    else: # Multiple mutations happen
+        mut = mMutation(mMutation(M,w[0:length-1]), [w[length-1]]) # Recursively "goes up" the mutation sequence
     return mut
+
+'''
+This function takes in a matrix and a sequence representing a total order
+It then returns a GIM
+Indexed at 1 not 0
+Input: M (skew-symmatrizable matrix), l (sequence representing linear order len(l) = M.nrows())
+Output: A (GIM)
+'''
+def corrGIM(M, l):
+    n = M.nrows()
+    length = len(l)
+    A = zero_matrix(n,n) # Starts A as a zero matrix
+    if n != length:
+        print("Invalid order")
+    else:
+        for i in range(n):
+            for j in range(n): # Standard rules for constructing GIM
+                if i == j:
+                    A[i,j] = 2
+                else:
+                    li = l.index(i+1) # Finds the index of the first and only instance of i+1 in the order
+                    lj = l.index(j+1) # Ditto ^
+                    if li < lj: # Means that i+1 < j+1 in the order
+                        A[i,j] = M[i,j]
+                    else:
+                        A[i,j] = -M[i,j]
+    return A
 
 '''
 This function takes in an index i, the initial exchange matrix, the initial c-vector matrix, and a mutation sequence w
 It then returns a sequence representing the indices of the r_i's
 Indexing of the matrices begins at 1 not 0, as we are accustomed to
 Both matrices should be square
-Inputs: i (index), bM (initial exchange matrix), cM(initial c-vector matrix), w (mutation sequence)
+Inputs: i (index), bM (initial exchange matrix), cM(initial c-vector matrix), w (mutation sequence len >= 0)
 Output: rW (index sequence representing r_i^w)
 '''
 def rMutation(i, bM, cM, w):
@@ -61,7 +92,9 @@ def rMutation(i, bM, cM, w):
      if i < 1 or i > bM.nrows(): # Checks to see if this is a valid index we are picking
          print ("Invalid mutation at index: ", i)
          return w
-     if length == 0: # This is when w is a single mutation
+     if length == -1: # When w is the empty mutation
+         rW = [i]
+     elif length == 0: # This is when w is a single mutation
          k = w[0]
          if (i == k): # Identity we showed
              rW = [i]
@@ -88,3 +121,96 @@ def rMutation(i, bM, cM, w):
              rW = rW2 + rW1 + rW2 # Cocatenates the lists
      rW = rCancel(rW) # Automatically removes some of the r_i's when possible
      return rW
+
+'''
+This function takes in an index sequence representing r_i^w and returns a matrix representing its action under pi
+Indexing begins at 1 not 0
+Returns a square Matrix
+A acts on elements of Gamma on the left
+Inputs: iSeq (index sequence len > 0), aM (GIM from linear ordering. Don't know how to represent linear orderings yet)
+Output: A (square matrix representing pi(r_i^w))
+'''
+def rAction(iSeq, aM):
+    length = len(iSeq)
+    i = iSeq[length-1] # As the r_i's act on the left, we need to evalute the last one first
+    r = aM.nrows()
+    c = aM.ncols()
+    A = matrix(r,c,0) # Gives a fresh matrix to represent the action
+    if length == 1:
+        for j in range(r):
+            for k in range(c): # This follows the rules set for the action of r_i given in paper
+                if j == k:
+                    if k == i-1: #-1 here to account for indexing
+                        A[j,k] = -1
+                    else:
+                        A[j,k] = 1
+                elif j == i-1:
+                    A[j,k] = -aM[k,j]
+                else:
+                    A[j,k] = 0
+    else:
+        A = rAction(iSeq[0:length-1], aM)*rAction([i], aM) # Recursively multiplies on the left
+    return A
+
+'''
+This function checks if the actions of two sequences representing r_i^w and r_j^v are equal
+Indexing begins at 1 not 0
+Returns true or false
+Input: iSeq, jSeq, aM (similar to rAction)
+Output: result (true or false)
+'''
+def rEqual(iSeq, jSeq, aM):
+    A1 = rAction(iSeq, aM) # Gets the two actions to compare
+    A2 = rAction(jSeq, aM)
+    result = (A1 == A2) # Compares them
+    return result
+
+'''
+This function checks if r_i^w = r_i^v for all i
+Indexing begins at 1 not 0
+Returns true or false
+Input: bM, cM, aM (exchange, coefficient, and GIM matrices), w, v (the two mutation sequences in question)
+Output: result (true or false)
+'''
+def allREqual(bM, cM, aM, w, v):
+    n = aM.nrows() # Gets the number of indices
+    result = true # default return is true
+    for i in [1..n]:
+        iSeqW = rMutation(i, bM, cM, w) # Calculates the two sequences of r_i's
+        iSeqV = rMutation(i, bM, cM, v)
+        if rAction(iSeqW, aM) != rAction(iSeqV, aM): # compares the two. If false they are not equal
+            result = false
+            break
+    return result
+
+'''
+This function determines if the C-vectors are equal under matrix mMutation
+Indexing begins at 1 not 0
+Returns true or false
+Input: bM, cM (exchange and c-vector matrices), w, v(mutation sequences len(w), len(v) >= 0)
+Output: result (true or false)
+'''
+def cEqual(bM, cM, w, v):
+    n = bM.nrows()
+    M = block_matrix([(bM, cM)]) # Mutates the two together
+    cW = mMutation(M, w)[:,n:] # Gets the C matrices
+    cV = mMutation(M, v)[:,n:]
+    result = (cW == cV) #compares the two
+    return result
+
+'''
+Finally, this function checks to see if the conjecture is satisfied for two given mutation sequences
+Indexing begins at 1 not 0
+Returns true or false
+Input: bM, cM, aM (exchange, coefficient, and GIM matrices), w, v (the two mutation sequences in question)
+Output: result (true or false. Default is true)
+'''
+def conjSatisfied(bM, cM, aM, w, v):
+    n = bM.nrows()
+    result = true
+    if cEqual(bM, cM, w, v):
+        result = allREqual(bM, cM, aM, w, v)
+    else:
+        print("C^w does not equal C^v. Does not satisfy assumptions of conjecture")
+        result = false
+    return result
