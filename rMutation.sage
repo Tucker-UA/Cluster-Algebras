@@ -169,16 +169,18 @@ def rEqual(iSeq, jSeq, aM):
 This function checks if r_i^w = r_i^v for all i
 Indexing begins at 1 not 0
 Returns true or false
-Input: bM, cM, aM (exchange, coefficient, and GIM matrices), w, v (the two mutation sequences in question)
+Input: bM, cM, (exchange, coefficient matrices), w, v (the two mutation sequences in question), l (linear ordering of the indices of bM)
 Output: result (true or false)
 '''
-def allREqual(bM, cM, aM, w, v):
+def allREqual(bM, cM, w, v, l):
+    aM = corrGIM(bM, l)
     n = aM.nrows() # Gets the number of indices
     result = true # default return is true
     for i in [1..n]:
         iSeqW = rMutation(i, bM, cM, w) # Calculates the two sequences of r_i's
         iSeqV = rMutation(i, bM, cM, v)
-        if rAction(iSeqW, aM) != rAction(iSeqV, aM): # compares the two. If false they are not equal
+        if not rEqual(iSeqW, iSeqV, aM): # compares the two. If false they are not equal
+            print('Linear order is not suitable')
             result = false
             break
     return result
@@ -202,14 +204,14 @@ def cEqual(bM, cM, w, v):
 Finally, this function checks to see if the conjecture is satisfied for two given mutation sequences
 Indexing begins at 1 not 0
 Returns true or false
-Input: bM, cM, aM (exchange, coefficient, and GIM matrices), w, v (the two mutation sequences in question)
+Input: bM, cM, (exchange, coefficient, matrices), w, v (the two mutation sequences in question), l (total ordering of indices)
 Output: result (true or false. Default is true)
 '''
-def conjSatisfied(bM, cM, aM, w, v):
+def conjSatisfied(bM, cM, w, v, l):
     n = bM.nrows()
     result = true
     if cEqual(bM, cM, w, v):
-        result = allREqual(bM, cM, aM, w, v)
+        result = allREqual(bM, cM, w, v, l)
     else:
         print("C^w does not equal C^v. Does not satisfy assumptions of conjecture")
         result = false
