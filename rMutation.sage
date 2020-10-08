@@ -216,3 +216,112 @@ def conjSatisfied(bM, cM, w, v, l):
         print("C^w does not equal C^v. Does not satisfy assumptions of conjecture")
         result = false
     return result
+
+
+
+
+'''
+It's important to remember that we only care about based loops in the exchange graph. Now we need a way to generate loops in the exchange graph. This is probably not an efficent way to do this. adj is an adjacency matrix, i is that starting seed/vertex. Returns a mutation sequence that gives a loop in the exchange graph. Indexing starts at 1 not 0.
+'''
+
+def randomWalk(oB):
+    if oB.nrows() == oB.ncols():
+        n = oB.ncols()
+        B = oB.set_immutable() #immutable version of B if we need it
+        G = fullExGraph(oB,Graph()) #creates the associhedron for B
+        MarkovB = matrix(QQ,G.adjacency_matrix()) #A markov chain for the associhedron
+        u = sum(posB.columns()) #this gives a vector of the row sums of our adjacency matrix
+        for i in [1..n]:
+            for j in [1..n]:
+                MarkovB[i-1,j-1] = MarkovB[i-1,j-1]/u[i-1] #turns B into a markov chain matrix with uniform probabilities
+        walk = [] #empty walk vector
+        walk = rCancel(walk) #this removes any backtracking/extraneous steps
+    else:
+        print("B matrices must be square.")
+    return walk
+
+
+
+
+'''
+##############################################################################################
+USING B INSTEAD OF M GIVES THE DESIRED EXCHANGE GRAPH.
+##############################################################################################
+'''
+
+'''
+Adds the vertices and edges connected to a matrix in the "extended" exchange graph
+Input: oM (n x 2n matrix), gO (graph that is being mutated)
+Output: G (Graph with mutations added to it)
+'''
+def exGraphMutation(oM, gO):
+    G = copy(gO)
+    o = G.order()
+    M = copy(oM)
+    M.set_immutable()
+    n = M.nrows()
+    if o == 0:
+        G.add_vertex(M)
+    else:
+        for i in [1..n]:
+            mut = mMutation(M, [i])
+            mut.set_immutable()
+            edge = {M, mut}
+            str = 'mu %i'%i
+            if G.has_vertex(mut):
+                if not G.has_edge(edge):
+                    G.add_edge(edge, label=str)
+                    #print(str)
+            else: 
+                G.add_vertex(mut)
+                G.add_edge(edge, label=str)
+                #print(str)
+    return G
+
+'''
+Adds the vertices and edges connected to a exchange graph for all vertices currently in the graph
+Input: M (n x 2n matrix), gO (graph)
+Output: G (graph with mutations added)
+'''
+
+def exGraph(M, gO):
+    G = copy(gO)
+    if G.order() == 0:
+        G = exGraphMutation(M,G)
+    vertices = G.vertices()
+    n = M.nrows()
+    for vert in vertices:
+        edges = G.neighbors(vert)
+        if len(edges) != n:
+            newG = exGraphMutation(vert, G)
+            G = G.union(newG)
+    return G
+
+'''
+Creates the full "extended" exchange graph for a given matrix and graph
+Input: M( n x 2n matrix), gO (graph)
+Output: G (extended exchange graph)
+'''
+
+def fullExGraph(M, g0):
+    G = copy(g0)
+    newG = exGraph(M, G)
+    while G != newG:
+        G = copy(newG)
+        newG = exGraph(M, G)
+    return G
+    
+'''
+Add G.plot() in the Jupyter notebook to make it plot it.
+Be warned, these are not the normal exchange graphs, but extended ones (Have not figured out how to make the plot bigger)
+The standard orientation produces 84 vertices
+By which I mean they are the graph formed by mutating [B C] until it pans out
+'''
+'''
+Trying to find the full extended exchange graph of A_10 does not load
+MAkes it not computationally feasible
+But does the normal exchange graph give us what we want
+'''
+
+
+
