@@ -1,9 +1,40 @@
-'''
-This function takes in a sequence of indices and removes duplicates next to each other
-Input: rSeq (list of indices)
-Output: red (reduced list of indices)
-'''
+r"""
+Code dealing with conjecture 1.9
+
+Summary goes here
+
+EXAMPLES::
+
+<Lots and lots of examples>
+
+AUTHORS:
+
+- Tucker Ervin (2020-10-13): initial version
+
+- Blake Jackson (2020-10-13): initial version
+
+"""
+
+# ****************************************************************************
+#       Copyright (C) 2020 Tucker Ervin & Blake Jackson tjervin@crimson.ua.edu
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  https://www.gnu.org/licenses/
+# ****************************************************************************
+
 def rCancel(rSeq):
+    r'''
+    This function takes in a sequence of indices and removes duplicates next to each other
+
+    Input:
+
+    - ''rSeq''  -- sequence of indices; Represents the indices of the product ''r_{i_1}r_{i_2}\\dots r_{i_n}''
+
+    Output: ''red'' -- reduced sequence of indices
+    '''
     red = rSeq
     j = 0 # Begins at the first element of the sequence
     while j < (len(red)-1):
@@ -18,13 +49,18 @@ def rCancel(rSeq):
             j += 1 # Advances one element
     return red
 
-'''
-This function takes in a matrix and outputs its image under matrix mutation
-Indexing of the matrix begins at 1 not 0, as we are accustomed to
-Input: M (matrix), w (mutation sequence len(w) >= 0)
-Output: mut (mutated Matrix)
-'''
+
 def mMutation(M, w):
+    r'''
+    This function takes in a matrix and outputs its image under matrix mutation
+
+    Input:
+    - ''M'' -- matrix;
+
+    - ''w'' -- sequence of mutations; The mutations range from 1 to rank(M).
+
+    Output: ''mut'' -- mutated Matrix
+    '''
     length = len(w)
     r = M.nrows()
     c = M.ncols()
@@ -50,14 +86,17 @@ def mMutation(M, w):
         mut = mMutation(mMutation(M,w[0:length-1]), [w[length-1]]) # Recursively "goes up" the mutation sequence
     return mut
 
-'''
-This function takes in a matrix and a sequence representing a total order
-It then returns a GIM
-Indexed at 1 not 0
-Input: M (skew-symmatrizable matrix), l (sequence representing linear order len(l) = M.nrows())
-Output: A (GIM)
-'''
 def corrGIM(M, l):
+    r'''
+    This function takes in a matrix and a sequence representing a total order, returning a GIM
+
+    Input:
+    - ''M'' -- skew-symmetrizable matrix;
+
+    - ''l'' -- sequence representing linear order; the length of the linear order equals the rank of M
+
+    Output: ''A'' -- appropriate GIM
+    '''
     n = M.nrows()
     length = len(l)
     A = zero_matrix(n,n) # Starts A as a zero matrix
@@ -77,24 +116,30 @@ def corrGIM(M, l):
                         A[i,j] = -M[i,j]
     return A
 
-'''
-This function takes in an index i, the initial exchange matrix, the initial c-vector matrix, and a mutation sequence w
-It then returns a sequence representing the indices of the r_i's
-Indexing of the matrices begins at 1 not 0, as we are accustomed to
-Both matrices should be square
-Inputs: i (index), bM (initial exchange matrix), cM(initial c-vector matrix), w (mutation sequence len >= 0)
-Output: rW (index sequence representing r_i^w)
-'''
 def rMutation(i, bM, cM, w):
-     wPrime = []
-     length = len(w)-1
-     rW = []
-     if i < 1 or i > bM.nrows(): # Checks to see if this is a valid index we are picking
+    r'''
+    This function takes in an index i, the initial exchange matrix, the initial c-vector matrix, and a mutation sequence w
+
+    Input:
+    - ''i'' -- index; Indexing begins at 1 not 0, as we are accustomed to
+
+    - ''bM'' -- initial exchange matrix; Both matrices should be square
+
+    - ''cM'' -- initial c-vector matrix; Both matrices should be square
+
+    - ''w'' -- mutation sequence;
+
+    Output: ''rW'' -- an index sequence representing ''r_i^w''
+    '''
+    wPrime = []
+    length = len(w)-1
+    rW = []
+    if i < 1 or i > bM.nrows(): # Checks to see if this is a valid index we are picking
          print ("Invalid mutation at index: ", i)
          return w
-     if length == -1: # When w is the empty mutation
+    if length == -1: # When w is the empty mutation
          rW = [i]
-     elif length == 0: # This is when w is a single mutation
+    elif length == 0: # This is when w is a single mutation
          k = w[0]
          if (i == k): # Identity we showed
              rW = [i]
@@ -104,7 +149,7 @@ def rMutation(i, bM, cM, w):
                  rW = [k, i, k]
              else:
                  rW = [i]
-     else:
+    else:
          wPrime = w[0:length]
          k = w[length] # Hence w = wPrime[k]
          if (i == k): # Identity we showed
@@ -119,23 +164,28 @@ def rMutation(i, bM, cM, w):
              if cK >= 0:
                        rW2.extend(rMutation(k,bM,cM,wPrime)) # Corresponds to the case when r_i^(w'[k]) = r_k^(w')r_i^(w')r_k^(w')
              rW = rW2 + rW1 + rW2 # Cocatenates the lists
-     rW = rCancel(rW) # Automatically removes some of the r_i's when possible
-     return rW
+    rW = rCancel(rW) # Automatically removes some of the r_i's when possible
+    return rW
 
-'''
-This function takes in an index sequence representing r_i^w and returns a matrix representing its action under pi
-Indexing begins at 1 not 0
-Returns a square Matrix
-A acts on elements of Gamma on the left
-Inputs: iSeq (index sequence len > 0), aM (GIM from linear ordering. Don't know how to represent linear orderings yet)
-Output: A (square matrix representing pi(r_i^w))
-'''
+
 def rAction(iSeq, aM):
-    length = len(iSeq)
-    i = iSeq[length-1] # As the r_i's act on the left, we need to evalute the last one first
+    r'''
+    This function takes in an index sequence representing r_i^w and returns a matrix representing its action under pi
+
+    Input:
+    - ''iSeq'' -- index sequence; Indices begin at 1 not 0
+
+    - ''aM'' -- GIM from linear ordering;
+
+    Output: ''A'' -- square matrix representing '\\pi(r_i^w)'' acting on elements of ''\\Gamma'' on the left
+    '''
     r = aM.nrows()
     c = aM.ncols()
     A = matrix(r,c,0) # Gives a fresh matrix to represent the action
+    length = len(iSeq)
+    if length == 0:
+        return A
+    i = iSeq[length-1] # As the r_i's act on the left, we need to evalute the last one first
     if length == 1:
         for j in range(r):
             for k in range(c): # This follows the rules set for the action of r_i given in paper
@@ -152,27 +202,42 @@ def rAction(iSeq, aM):
         A = rAction(iSeq[0:length-1], aM)*rAction([i], aM) # Recursively multiplies on the left
     return A
 
-'''
-This function checks if the actions of two sequences representing r_i^w and r_j^v are equal
-Indexing begins at 1 not 0
-Returns true or false
-Input: iSeq, jSeq, aM (similar to rAction)
-Output: result (true or false)
-'''
+
 def rEqual(iSeq, jSeq, aM):
+    r'''
+    This function checks if the actions of two sequences representing 'r_i^w' and 'r_j^v' are equal
+
+    Input:
+    - ''iSeq'' -- index sequence; Indexing begins at 1 not 0
+
+    - ''jSeq'' -- index sequence;
+
+    - ''aM'' -- GIM from linear ordering;
+
+    Output: ''result'' -- boolean
+    '''
     A1 = rAction(iSeq, aM) # Gets the two actions to compare
     A2 = rAction(jSeq, aM)
     result = (A1 == A2) # Compares them
     return result
 
-'''
-This function checks if r_i^w = r_i^v for all i
-Indexing begins at 1 not 0
-Returns true or false
-Input: bM, cM, (exchange, coefficient matrices), w, v (the two mutation sequences in question), l (linear ordering of the indices of bM)
-Output: result (true or false)
-'''
 def allREqual(bM, cM, w, v, l):
+    r'''
+    This function checks if 'r_i^w = r_i^v' for all 'i'
+
+    Input:
+    - ''bM'' -- exchange matrix;
+
+    - ''cM'' -- coefficient matrix;
+
+    - ''w'' -- mutation sequence; Indexing begins at 1 not 0
+
+    - ''v'' -- mutation sequence;
+
+    - ''l'' -- sequence representing linear order; the length of the linear order equals the rank of bM
+
+    Output: ''result'' -- boolean
+    '''
     aM = corrGIM(bM, l)
     n = aM.nrows() # Gets the number of indices
     result = true # default return is true
@@ -185,14 +250,21 @@ def allREqual(bM, cM, w, v, l):
             break
     return result
 
-'''
-This function determines if the C-vectors are equal under matrix mMutation
-Indexing begins at 1 not 0
-Returns true or false
-Input: bM, cM (exchange and c-vector matrices), w, v(mutation sequences len(w), len(v) >= 0)
-Output: result (true or false)
-'''
 def cEqual(bM, cM, w, v):
+    r'''
+    This function determines if the C-vectors are equal under matrix mMutation
+
+    Input:
+    - ''bM'' -- exchange matrix;
+
+    - ''cM'' -- coefficient matrix;
+
+    - ''w'' -- mutation sequence; Indexing begins at 1 not 0
+
+    - ''v'' -- mutation sequence;
+
+    Output: ''result'' -- boolean
+    '''
     n = bM.nrows()
     M = block_matrix([(bM, cM)]) # Mutates the two together
     cW = mMutation(M, w)[:,n:] # Gets the C matrices
@@ -200,14 +272,23 @@ def cEqual(bM, cM, w, v):
     result = (cW == cV) #compares the two
     return result
 
-'''
-Finally, this function checks to see if the conjecture is satisfied for two given mutation sequences
-Indexing begins at 1 not 0
-Returns true or false
-Input: bM, cM, (exchange, coefficient, matrices), w, v (the two mutation sequences in question), l (total ordering of indices)
-Output: result (true or false. Default is true)
-'''
 def conjSatisfied(bM, cM, w, v, l):
+    r'''
+    This function checks to see if the conjecture is satisfied for two given mutation sequences
+
+    Input:
+    - ''bM'' -- exchange matrix;
+
+    - ''cM'' -- coefficient matrix;
+
+    - ''w'' -- mutation sequence; Indexing begins at 1 not 0
+
+    - ''v'' -- mutation sequence;
+
+    - ''l'' -- sequence representing linear order; the length of the linear order equals the rank of bM
+
+    Output: ''result'' -- boolean; Default is true
+    '''
     n = bM.nrows()
     result = true
     if cEqual(bM, cM, w, v):
@@ -249,12 +330,16 @@ USING B INSTEAD OF M GIVES THE DESIRED EXCHANGE GRAPH.
 ##############################################################################################
 '''
 
-'''
-Adds the vertices and edges connected to a matrix in the "extended" exchange graph
-Input: oM (n x 2n matrix), gO (graph that is being mutated)
-Output: G (Graph with mutations added to it)
-'''
 def exGraphMutation(oM, gO):
+    r'''
+    Adds the vertices and edges connected to a matrix in the "extended" exchange graph
+
+    Input:
+    - ''oM'' -- 'n \\times 2n';
+    - ''gO'' -- graph that is being mutated;
+
+    Output: ''G'' -- Graph with mutations added to it
+    '''
     G = copy(gO)
     o = G.order()
     M = copy(oM)
@@ -272,19 +357,22 @@ def exGraphMutation(oM, gO):
                 if not G.has_edge(edge):
                     G.add_edge(edge, label=str)
                     #print(str)
-            else: 
+            else:
                 G.add_vertex(mut)
                 G.add_edge(edge, label=str)
                 #print(str)
     return G
 
-'''
-Adds the vertices and edges connected to a exchange graph for all vertices currently in the graph
-Input: M (n x 2n matrix), gO (graph)
-Output: G (graph with mutations added)
-'''
-
 def exGraph(M, gO):
+    r'''
+    Adds the vertices and edges connected to a exchange graph for all vertices currently in the graph
+
+    Input:
+    - ''M'' -- 'n \\times 2n';
+    - ''gO'' -- graph that is being mutated;
+
+    Output: ''G'' -- Graph with mutations added to it
+    '''
     G = copy(gO)
     if G.order() == 0:
         G = exGraphMutation(M,G)
@@ -297,20 +385,25 @@ def exGraph(M, gO):
             G = G.union(newG)
     return G
 
-'''
-Creates the full "extended" exchange graph for a given matrix and graph
-Input: M( n x 2n matrix), gO (graph)
-Output: G (extended exchange graph)
-'''
-
 def fullExGraph(M, g0):
+    r'''
+    Creates the full "extended" exchange graph for a given matrix and graph
+
+    Input:
+    - ''M'' -- 'n \\times 2n';
+    - ''gO'' -- graph that is being mutated;
+
+    Output: ''G'' -- Graph with mutations added to it
+
+    WARNING: This function is quite slow. Do not try for anything above 'A_4'
+    '''
     G = copy(g0)
     newG = exGraph(M, G)
     while G != newG:
         G = copy(newG)
         newG = exGraph(M, G)
     return G
-    
+
 '''
 Add G.plot() in the Jupyter notebook to make it plot it.
 Be warned, these are not the normal exchange graphs, but extended ones (Have not figured out how to make the plot bigger)
@@ -322,6 +415,3 @@ Trying to find the full extended exchange graph of A_10 does not load
 MAkes it not computationally feasible
 But does the normal exchange graph give us what we want
 '''
-
-
-
