@@ -177,7 +177,7 @@ def rAction(iSeq, aM):
 
     - ''aM'' -- GIM from linear ordering;
 
-    Output: ''A'' -- square matrix representing '\\pi(r_i^w)'' acting on elements of ''\\Gamma'' on the left
+    Output: ''A'' -- square matrix representing '\\pi(r_i^w) acting on elements of \\Gamma' on the left
     '''
     r = aM.nrows()
     c = aM.ncols()
